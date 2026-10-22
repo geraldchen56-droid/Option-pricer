@@ -116,7 +116,7 @@ footer a{color:var(--accent)}
     <div class="cell"><div class="label">Worst gap on grid</div><div class="v" id="r-worst">—</div><div class="s">max |MC − BS|, 800 points</div></div>
   </div>
 </div>
-<p class="hint">Try this: switch to <b>MC − BS</b>, then flip between 10k and 1M simulations. The z-axis stays fixed, so the noise visibly shrinks — by about <b>√100 = 10×</b>.</p>
+<p class="hint">Try this: switch to <b>MC − BS</b>, then flip between 10k and 1M simulations. The surface stays zoomed in on the noise, so watch the <b>± standard error</b> under the MC price: 100× the simulations shrinks it by <b>√100 = 10×</b>.</p>
 
 <section class="steps">
   <h2>How it works</h2>
@@ -148,7 +148,7 @@ footer a{color:var(--accent)}
       <h3>Price = discounted average payoff</h3>
       <p>A call pays max(S<sub>T</sub> − K, 0). Simulate <i>n</i> futures, pay out in each, average, discount back to today. The law of large numbers does the rest:</p>
       <div class="eq" data-tex="C \approx e^{-rT}\,\frac{1}{n}\sum_{i=1}^{n}\max\!\big(S_T^{(i)}-K,\,0\big),\qquad \text{error}\propto\frac{1}{\sqrt n}"></div>
-      <p class="aside">The √ law again, now working for you: 100× more simulations buys 10× more accuracy. That's the noise you see shrink in the MC − BS view.</p>
+      <p class="aside">The √ law again, now working for you: 100× more simulations buys 10× more accuracy. Flip between 10k and 1M simulations and the ± standard error under the MC price drops tenfold.</p>
     </div>
   </div>
 
@@ -188,7 +188,6 @@ footer a{color:var(--accent)}
   const strikes = R.linspace(60, 140, 40);
   const mats = R.linspace(0.1, 2.0, 20);
   const PRICE_MAX = R.bsCall(S0, 60, 2, r, 0.5) * 1.04; // pinned across all σ
-  const DIFF_MAX = 0.35;                                 // pinned across all n
 
   const state = { view: "mc", n: 100000, sigma: 0.20, seed: 20260904, z: null, buf: null };
 
@@ -239,9 +238,10 @@ footer a{color:var(--accent)}
                          [4/6, "#2a78d6"], [5/6, "#1c5cab"], [1, "#0d366b"]];
     const ERROR_SCALE = [[0, "#0d366b"], [0.25, "#3987e5"], [0.5, "#f0efec"], [0.75, "#e34948"], [1, "#7d2020"]];
     const scale = isDiff ? ERROR_SCALE : PRICE_SCALE;
-    // Colours stretch to the largest error on screen so the sign of the error
-    // is always visible; the z-axis stays fixed so the noise visibly shrinks.
-    const errSpan = Math.max(worst, 1e-6);
+    // The error view zooms in on the noise: both the z-axis and the colours
+    // stretch to the largest error on screen, so the surface is never a flat
+    // sheet. How big the noise is shows in the axis and colour-bar numbers.
+    const errSpan = Math.max(worst, 1e-6) * 1.1;
     const axis = t => ({ title: { text: t, font: { color: muted, size: 12 } }, gridcolor: line, zerolinecolor: line,
       tickfont: { color: muted, size: 11 }, backgroundcolor: "rgba(0,0,0,0)", showbackground: true });
 
@@ -260,9 +260,9 @@ footer a{color:var(--accent)}
       scene: {
         xaxis: axis("strike K"), yaxis: axis("years to expiry T"),
         zaxis: Object.assign(axis(isDiff ? "MC − BS" : "call price"),
-          { range: isDiff ? [-DIFF_MAX, DIFF_MAX] : [0, PRICE_MAX] }),
+          { range: isDiff ? [-errSpan, errSpan] : [0, PRICE_MAX] }),
         camera: { eye: { x: 1.6, y: -1.6, z: 0.75 } },
-        aspectmode: "manual", aspectratio: { x: 1.2, y: 1, z: 0.7 }
+        aspectmode: "manual", aspectratio: { x: 1.2, y: 1, z: isDiff ? 0.9 : 0.7 }
       },
       uirevision: "keep"
     };
