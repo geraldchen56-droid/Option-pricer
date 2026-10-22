@@ -233,16 +233,24 @@ footer a{color:var(--accent)}
     const isDiff = state.view === "diff";
     const z = state.view === "mc" ? mc : state.view === "bs" ? bs : diff;
     const label = { mc: "MC price", bs: "BS price", diff: "MC − BS" }[state.view];
-    const scale = isDiff
-      ? [[0, "#b4471f"], [0.5, "#f2efe6"], [1, "#1f4fd1"]]
-      : [[0, "#eef2fd"], [0.35, "#9db3f2"], [0.7, "#3a63d8"], [1, "#132f80"]];
+    // Same palettes as the Python version (surface_mc.py): one blue ramp for
+    // prices, and a diverging blue / grey / red scale for the signed error.
+    const PRICE_SCALE = [[0, "#cde2fb"], [1/6, "#9ec5f4"], [2/6, "#6da7ec"], [3/6, "#3987e5"],
+                         [4/6, "#2a78d6"], [5/6, "#1c5cab"], [1, "#0d366b"]];
+    const ERROR_SCALE = [[0, "#0d366b"], [0.25, "#3987e5"], [0.5, "#f0efec"], [0.75, "#e34948"], [1, "#7d2020"]];
+    const scale = isDiff ? ERROR_SCALE : PRICE_SCALE;
+    // Colours stretch to the largest error on screen so the sign of the error
+    // is always visible; the z-axis stays fixed so the noise visibly shrinks.
+    const errSpan = Math.max(worst, 1e-6);
     const axis = t => ({ title: { text: t, font: { color: muted, size: 12 } }, gridcolor: line, zerolinecolor: line,
       tickfont: { color: muted, size: 11 }, backgroundcolor: "rgba(0,0,0,0)", showbackground: true });
 
     const trace = {
       type: "surface", x: Array.from(strikes), y: Array.from(mats), z,
-      colorscale: scale, cmin: isDiff ? -DIFF_MAX : 0, cmax: isDiff ? DIFF_MAX : PRICE_MAX,
-      showscale: false,
+      colorscale: scale, cmin: isDiff ? -errSpan : 0, cmax: isDiff ? errSpan : PRICE_MAX,
+      showscale: true,
+      colorbar: { title: { text: isDiff ? "MC − BS" : "price", side: "right", font: { color: muted, size: 12 } },
+                  tickfont: { color: muted, size: 11 }, outlinewidth: 0, len: 0.7, thickness: 14 },
       hovertemplate: "K %{x:.0f}<br>T %{y:.2f}y<br>" + label + " %{z:.4f}<extra></extra>",
       contours: { z: { show: false } }
     };
