@@ -7,6 +7,8 @@ library — no numpy or scipy required.
 vs Black-Scholes price surface with a volatility slider, running in the browser.
 Source in [`web/`](web/).
 
+Built by Gerald Chen, with Claude (Anthropic) used as a coding assistant.
+
 ## Install
 
 ```bash
